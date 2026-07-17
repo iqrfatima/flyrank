@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from pydantic import BaseModel, Field
 
 app = FastAPI(
     title="Task API",
@@ -16,3 +17,7 @@ def root():
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+@app.post("/tasks")
+class TaskCreate(BaseModel):
+    title: str = Field(..., min_length=1)
