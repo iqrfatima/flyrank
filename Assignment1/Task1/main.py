@@ -38,7 +38,11 @@ def health():
     return {"status": "ok"}
 
 
-@app.get("/tasks")
+@app.get(
+    "/tasks",
+    summary="Get All Tasks",
+    description="Returns the complete list of tasks."
+)
 def get_tasks():
     return tasks
 
