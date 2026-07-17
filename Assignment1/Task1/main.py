@@ -11,7 +11,7 @@ def root():
     return {
         "name": "Task API",
         "version": "1.0",
-        "endpoints": ["/tasks"]
+        "endpoints": ["/tasks/{id}"]
     }
 @app.get("/health")
 def health():
