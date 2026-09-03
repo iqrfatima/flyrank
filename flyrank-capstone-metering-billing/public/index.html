@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Usage Metering & Billing Engine</title>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #0b0f19; color: #f1f5f9; min-height: 100vh; line-height: 1.5; }
+    .container { max-width: 1020px; margin: 0 auto; padding: 2.5rem 1.25rem; }
+    header { margin-bottom: 2rem; border-bottom: 1px solid #1e293b; padding-bottom: 1.25rem; }
+    h1 { font-size: 1.85rem; font-weight: 800; letter-spacing: -0.02em; color: #f8fafc; }
+    .subtitle { color: #94a3b8; font-size: 0.95rem; margin-top: 0.35rem; }
+    .tagline { display: inline-flex; gap: 0.5rem; margin-top: 0.5rem; }
+    .tag { font-size: 0.75rem; background: #1e293b; color: #cbd5e1; padding: 0.2rem 0.6rem; border-radius: 6px; border: 1px solid #334155; }
+    .card { background: #131d31; border-radius: 14px; padding: 1.5rem; margin-bottom: 1.25rem; border: 1px solid #1e293b; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2); }
+    .card h2 { font-size: 0.85rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 1rem; font-weight: 700; }
+    label { display: block; font-size: 0.85rem; color: #94a3b8; margin-bottom: 0.4rem; font-weight: 500; }
+    input, select, textarea { width: 100%; padding: 0.65rem 0.85rem; border-radius: 8px; border: 1px solid #334155; background: #0b0f19; color: #f1f5f9; font-size: 0.9rem; transition: border-color 0.15s; }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: #6366f1; }
+    textarea { min-height: 80px; resize: vertical; font-family: inherit; }
+    .row { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1rem; }
+    button { padding: 0.65rem 1.2rem; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; font-size: 0.875rem; transition: all 0.15s; }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-primary { background: #4f46e5; color: #fff; }
+    .btn-primary:hover:not(:disabled) { background: #4338ca; }
+    .btn-secondary { background: #1e293b; color: #e2e8f0; border: 1px solid #334155; }
+    .btn-secondary:hover:not(:disabled) { background: #334155; }
+    .btn-success { background: #059669; color: #fff; }
+    .btn-success:hover:not(:disabled) { background: #047857; }
+    .btn-pill { padding: 0.35rem 0.75rem; font-size: 0.75rem; border-radius: 999px; background: #1e293b; border: 1px solid #475569; color: #cbd5e1; }
+    .btn-pill:hover { background: #334155; }
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 1.25rem; }
+    .stat-box { background: #0b0f19; border: 1px solid #1e293b; border-radius: 10px; padding: 1.1rem; }
+    .stat-value { font-size: 1.65rem; font-weight: 800; color: #f8fafc; font-variant-numeric: tabular-nums; }
+    .stat-label { font-size: 0.8rem; color: #64748b; margin-top: 0.2rem; }
+    .progress-bar { height: 7px; background: #1e293b; border-radius: 4px; margin-top: 0.65rem; overflow: hidden; }
+    .progress-fill { height: 100%; transition: width 0.3s ease; }
+    .alert { padding: 0.85rem 1.15rem; border-radius: 10px; margin-bottom: 1.15rem; font-size: 0.9rem; }
+    .alert-error { background: #450a0a; border: 1px solid #991b1b; color: #fca5a5; }
+    .alert-success { background: #052e16; border: 1px solid #166534; color: #86efac; }
+    .alert-info { background: #172554; border: 1px solid #1e40af; color: #93c5fd; }
+    .badge { display: inline-block; padding: 0.25rem 0.65rem; border-radius: 999px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+    .badge-free { background: #334155; color: #94a3b8; }
+    .badge-pro { background: #3730a3; color: #c7d2fe; border: 1px solid #4f46e5; }
+    .badge-active { background: #064e3b; color: #6ee7b7; border: 1px solid #059669; }
+    .badge-danger { background: #7f1d1d; color: #fca5a5; }
+    .actions { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 1.1rem; }
+    pre { background: #0b0f19; padding: 1rem; border-radius: 8px; overflow-x: auto; font-size: 0.8rem; color: #94a3b8; border: 1px solid #1e293b; line-height: 1.45; }
+    .header-row { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem; }
+    .key-bar { display: flex; gap: 0.5rem; margin-top: 0.5rem; flex-wrap: wrap; }
+    .token-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.75rem; margin-top: 0.75rem; }
+    .token-pill { background: #0b0f19; border: 1px solid #1e293b; border-radius: 8px; padding: 0.6rem; text-align: center; }
+    .token-pill .t-val { font-size: 1.1rem; font-weight: 700; color: #cbd5e1; }
+    .token-pill .t-lbl { font-size: 0.72rem; color: #64748b; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+    const { useState, useEffect, useCallback } = React;
+
+    function uuid() {
+      return crypto.randomUUID ? crypto.randomUUID() : "key-" + Date.now() + "-" + Math.random().toString(36).slice(2);
+    }
+    function pct(used, limit) {
+      return limit ? Math.min(100, Math.round((used / limit) * 100)) : 0;
+    }
+    function errMsg(data) {
+      const d = data && data.detail && typeof data.detail === "object" ? data.detail : data;
+      return (d && (d.message || d.error)) || (typeof data.detail === "string" ? data.detail : "Request failed");
+    }
+
+    function App() {
+      const [apiKey, setApiKey] = useState(localStorage.getItem("apiKey") || "");
+      const [demoKeys, setDemoKeys] = useState(null);
+      const [usage, setUsage] = useState(null);
+      const [plans, setPlans] = useState([]);
+      const [razorpayEnabled, setRazorpayEnabled] = useState(false);
+      const [loading, setLoading] = useState(false);
+      const [message, setMessage] = useState(null);
+      const [error, setError] = useState(null);
+      const [idempotencyKey, setIdempotencyKey] = useState(uuid());
+      const [path, setPath] = useState("direct");
+      const [prompt, setPrompt] = useState("What did this tenant use this month, and what should they pay?");
+      const [compare, setCompare] = useState(null);
+      const [lastResult, setLastResult] = useState(null);
+
+      const headers = useCallback(() => ({
+        "Content-Type": "application/json",
+        "X-API-Key": apiKey
+      }), [apiKey]);
+
+      const fetchUsage = useCallback(async () => {
+        if (!apiKey) return;
+        setLoading(true); setError(null);
+        try {
+          const res = await fetch("/api/usage", { headers: headers() });
+          const data = await res.json();
+          if (!res.ok) throw new Error(errMsg(data));
+          setUsage(data);
+        } catch (e) {
+          setError(e.message);
+          setUsage(null);
+        } finally {
+          setLoading(false);
+        }
+      }, [apiKey, headers]);
+
+      useEffect(() => {
+        fetch("/api/plans")
+          .then(r => r.json())
+          .then(d => {
+            setPlans(d.plans || []);
+            setRazorpayEnabled(Boolean(d.razorpayEnabled));
+          })
+          .catch(() => {});
+
+        fetch("/api/demo-keys")
+          .then(r => r.json())
+          .then(d => setDemoKeys(d))
+          .catch(() => {});
+      }, []);
+
+      useEffect(() => {
+        if (apiKey) {
+          localStorage.setItem("apiKey", apiKey);
+          fetchUsage();
+        }
+      }, [apiKey, fetchUsage]);
+
+      async function handleGenerate(reuseKey) {
+        const key = reuseKey ? idempotencyKey : uuid();
+        if (!reuseKey) setIdempotencyKey(key);
+        setLoading(true); setError(null); setMessage(null);
+        try {
+          const res = await fetch("/api/generate", {
+            method: "POST",
+            headers: { ...headers(), "Idempotency-Key": key },
+            body: JSON.stringify({ prompt, path }),
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            setLastResult({ ok: false, status: res.status, data });
+            throw new Error(errMsg(data));
+          }
+          setLastResult({ ok: true, status: res.status, data });
+          setMessage(data.duplicate ? "Idempotent replay: NO double charge recorded" : "Usage recorded (" + (data.providerUsage && data.providerUsage.path) + ")");
+          await fetchUsage();
+        } catch (e) {
+          setError(e.message);
+        } finally {
+          setLoading(false);
+        }
+      }
+
+      async function handleCompare() {
+        setLoading(true); setError(null);
+        try {
+          const res = await fetch("/api/analyze", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ prompt }),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(errMsg(data));
+          setCompare(data);
+        } catch (e) {
+          setError(e.message);
+        } finally {
+          setLoading(false);
+        }
+      }
+
+      async function handleUpgrade() {
+        setLoading(true); setError(null);
+        try {
+          const res = await fetch("/api/checkout", { method: "POST", headers: headers() });
+          const data = await res.json();
+          if (!res.ok) throw new Error(errMsg(data));
+          const rzp = new Razorpay({
+            key: data.keyId,
+            subscription_id: data.subscriptionId,
+            name: "Usage Metering Engine",
+            description: "Pro Plan Subscription",
+            handler: function () {
+              setMessage("Payment completed — Razorpay webhook will synchronize plan to Pro.");
+              setTimeout(fetchUsage, 2500);
+            },
+            theme: { color: "#4f46e5" },
+          });
+          rzp.open();
+        } catch (e) {
+          setError(e.message);
+        } finally {
+          setLoading(false);
+        }
+      }
+
+      const tenant = usage && usage.tenant;
+      const u = usage && usage.usage;
+      const cost = usage && usage.cost;
+
+      return (
+        <div className="container">
+          <header>
+            <h1>Usage Metering & Billing Engine</h1>
+            <p className="subtitle">
+              Idempotent usage tracking · Quota enforcement · AI token money math · MCP optimization · Razorpay test mode
+            </p>
+            <div className="tagline">
+              <span className="tag">Python 3.13 + FastAPI</span>
+              <span className="tag">SQLite / PostgreSQL</span>
+              <span className="tag">$0 Free Stack</span>
+              <span className="tag">Razorpay Test Mode</span>
+            </div>
+          </header>
+
+          <div className="card">
+            <h2>Authentication & Tenant Selector</h2>
+            <label>Tenant API Key (enter custom key or click a seeded demo tenant below)</label>
+            <input
+              value={apiKey}
+              onChange={e => setApiKey(e.target.value)}
+              placeholder="demo_xxxxxxxx or pro_xxxxxxxx"
+            />
+            {demoKeys && (
+              <div className="key-bar">
+                {demoKeys.free && (
+                  <button
+                    type="button"
+                    className="btn-pill"
+                    onClick={() => setApiKey(demoKeys.free.apiKey)}
+                  >
+                    Use Seeded Free Key ({demoKeys.free.apiKey.slice(0, 12)}…)
+                  </button>
+                )}
+                {demoKeys.pro && (
+                  <button
+                    type="button"
+                    className="btn-pill"
+                    onClick={() => setApiKey(demoKeys.pro.apiKey)}
+                  >
+                    Use Seeded Pro Key ({demoKeys.pro.apiKey.slice(0, 12)}…)
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+
+          {!razorpayEnabled && (
+            <div className="alert alert-info">
+              Razorpay API keys are optional. You can test Pro plan quotas and high limits at any time using the seeded <strong>Pro</strong> API key.
+            </div>
+          )}
+
+          {error && <div className="alert alert-error">{error}</div>}
+          {message && <div className="alert alert-success">{message}</div>}
+
+          {usage && (
+            <>
+              <div className="card">
+                <div className="header-row">
+                  <h2>Tenant Status & Live Quotas</h2>
+                  <div>
+                    <span className={"badge badge-" + tenant.plan.toLowerCase()}>{tenant.plan} Plan</span>{" "}
+                    <span className={"badge " + (tenant.status === "active" ? "badge-active" : "badge-danger")}>{tenant.status}</span>
+                  </div>
+                </div>
+                <div className="stats">
+                  <div className="stat-box">
+                    <div className="stat-value">{u.apiCalls.used.toLocaleString()}</div>
+                    <div className="stat-label">API Calls / {u.apiCalls.limit.toLocaleString()}</div>
+                    <div className="progress-bar">
+                      <div
+                        className="progress-fill"
+                        style={{ width: pct(u.apiCalls.used, u.apiCalls.limit) + "%", background: "#6366f1" }}
+                      />
+                    </div>
+                  </div>
+                  <div className="stat-box">
+                    <div className="stat-value">{u.aiTokens.used.toLocaleString()}</div>
+                    <div className="stat-label">AI Tokens / {u.aiTokens.limit.toLocaleString()}</div>
+                    <div className="progress-bar">
+                      <div
+                        className="progress-fill"
+                        style={{ width: pct(u.aiTokens.used, u.aiTokens.limit) + "%", background: "#059669" }}
+                      />
+                    </div>
+                  </div>
+                  <div className="stat-box">
+                    <div className="stat-value">₹{(cost.totalCents / 100).toFixed(2)}</div>
+                    <div className="stat-label">Estimated Monthly Cost (INR)</div>
+                  </div>
+                </div>
+
+                <div className="token-grid">
+                  <div className="token-pill">
+                    <div className="t-val">{(u.tokenBreakdown.input || 0).toLocaleString()}</div>
+                    <div className="t-lbl">Input (₹0.003/1k)</div>
+                  </div>
+                  <div className="token-pill">
+                    <div className="t-val">{(u.tokenBreakdown.cached_input || 0).toLocaleString()}</div>
+                    <div className="t-lbl">Cached Input (₹0.0015/1k)</div>
+                  </div>
+                  <div className="token-pill">
+                    <div className="t-val">{(u.tokenBreakdown.output || 0).toLocaleString()}</div>
+                    <div className="t-lbl">Output (₹0.006/1k)</div>
+                  </div>
+                  <div className="token-pill">
+                    <div className="t-val">{(u.tokenBreakdown.reasoning || 0).toLocaleString()}</div>
+                    <div className="t-lbl">Reasoning (=Output rate)</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="card">
+                <h2>Billable LLM Request — POST /api/generate</h2>
+                <label>Prompt (Simulated LLM pipeline)</label>
+                <textarea value={prompt} onChange={e => setPrompt(e.target.value)} />
+                <div className="row" style={{ marginTop: "0.85rem" }}>
+                  <div>
+                    <label>Architecture Execution Path</label>
+                    <select value={path} onChange={e => setPath(e.target.value)}>
+                      <option value="direct">Direct LLM (Dump full context into prompt)</option>
+                      <option value="mcp_lean">MCP Lean (2 targeted tools — saves tokens)</option>
+                      <option value="mcp_noisy">MCP Noisy (Many tools + huge payload — tool overhead)</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="actions">
+                  <button className="btn-primary" onClick={() => handleGenerate(false)} disabled={loading}>
+                    Generate (New Idempotency Key)
+                  </button>
+                  <button className="btn-secondary" onClick={() => handleGenerate(true)} disabled={loading}>
+                    Retry (Same Idempotency Key)
+                  </button>
+                  <button className="btn-secondary" onClick={handleCompare} disabled={loading}>
+                    Compare Paths (Non-Billable)
+                  </button>
+                  <button className="btn-secondary" onClick={fetchUsage} disabled={loading}>
+                    Refresh Usage
+                  </button>
+                </div>
+                <div className="alert alert-info" style={{ marginTop: "1rem", marginBottom: 0 }}>
+                  Active Idempotency-Key: <code>{idempotencyKey}</code>
+                </div>
+              </div>
+
+              {lastResult && (
+                <div className="card">
+                  <h2>Last Execution Result (HTTP {lastResult.status})</h2>
+                  <div style={{ marginBottom: "0.5rem" }}>
+                    <span className={"badge " + (lastResult.data.duplicate ? "badge-pro" : "badge-active")}>
+                      {lastResult.data.duplicate ? "Idempotent Replay (No Duplicate Charge)" : "New Usage Recorded"}
+                    </span>{" "}
+                    {lastResult.data.eventId && <span className="tag">Event ID: {lastResult.data.eventId}</span>}
+                  </div>
+                  <pre>{JSON.stringify(lastResult.data, null, 2)}</pre>
+                </div>
+              )}
+
+              {compare && (
+                <div className="card">
+                  <h2>MCP vs Direct LLM — Token & Cost Analyzer</h2>
+                  <p style={{ color: "#94a3b8", fontSize: "0.9rem", marginBottom: "0.75rem" }}>
+                    <strong>MCP Lean:</strong> saves ₹{(compare.mcp_lean_saves_vs_direct_cents / 100).toFixed(2)} vs Direct path.
+                    <br />
+                    <strong>MCP Noisy:</strong> adds ₹{(compare.mcp_noisy_overhead_vs_direct_cents / 100).toFixed(2)} tool-schema overhead.
+                  </p>
+                  <pre>{JSON.stringify(compare, null, 2)}</pre>
+                </div>
+              )}
+
+              {tenant.plan === "Free" && razorpayEnabled && (
+                <div className="card">
+                  <h2>Upgrade to Pro Subscription</h2>
+                  <p style={{ color: "#94a3b8", marginBottom: "1rem", fontSize: "0.9rem" }}>
+                    Test Card Number: <code>4111 1111 1111 1111</code> (any future date, any CVV).
+                  </p>
+                  <button className="btn-success" onClick={handleUpgrade} disabled={loading}>
+                    Subscribe via Razorpay Test Mode
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+
+          {plans.length > 0 && (
+            <div className="card">
+              <h2>Available Subscription Plans</h2>
+              <pre>{JSON.stringify(plans, null, 2)}</pre>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+run: python scripts/migrate.py && python -m app.main
+seed: python scripts/seed.py
+test: python -m pytest -q
+base_url: http://localhost:3000
+endpoints:
+  health: GET /health
+  usage: GET /api/usage
+  generate: POST /api/generate
+  analyze: POST /api/analyze
+  checkout: POST /api/checkout
+  plans: GET /api/plans
+  webhook: POST /webhooks/razorpay
+  frontend: GET /
